@@ -1,0 +1,631 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Code Review & Correction</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.8.0/styles/atom-one-dark.min.css">
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.8.0/highlight.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.8.0/languages/javascript.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.8.0/languages/python.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.8.0/languages/java.min.js"></script>
+    <style>
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+        }
+
+        body {
+            background-color: #f5f7fa;
+            color: #333;
+            line-height: 1.6;
+        }
+
+        .container {
+            max-width: 900px;
+            margin: 0 auto;
+            padding: 40px 20px;
+        }
+
+        header {
+            text-align: center;
+            margin-bottom: 40px;
+        }
+
+        h1 {
+            color: #2c3e50;
+            font-size: 2.5rem;
+            margin-bottom: 10px;
+        }
+
+        .subtitle {
+            color: #7f8c8d;
+            font-size: 1.1rem;
+        }
+
+        .card {
+            background-color: white;
+            border-radius: 10px;
+            padding: 30px;
+            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.1);
+            margin-bottom: 30px;
+        }
+
+        .input-label {
+            display: block;
+            font-weight: 600;
+            margin-bottom: 10px;
+            color: #2c3e50;
+        }
+
+        .language-selector {
+            width: 100%;
+            padding: 12px;
+            margin-bottom: 15px;
+            border: 1px solid #ddd;
+            border-radius: 5px;
+            font-size: 1rem;
+        }
+
+        .code-input {
+            width: 100%;
+            padding: 15px;
+            border: 1px solid #ddd;
+            border-radius: 5px;
+            font-size: 0.9rem;
+            font-family: 'Courier New', Courier, monospace;
+            min-height: 200px;
+            resize: vertical;
+            margin-bottom: 20px;
+            transition: border-color 0.3s;
+        }
+
+        .code-input:focus {
+            outline: none;
+            border-color: #3498db;
+            box-shadow: 0 0 0 2px rgba(52, 152, 219, 0.2);
+        }
+
+        .btn {
+            background-color: #3498db;
+            color: white;
+            border: none;
+            padding: 12px 25px;
+            border-radius: 5px;
+            cursor: pointer;
+            font-size: 1rem;
+            font-weight: 600;
+            transition: background-color 0.3s;
+            display: block;
+            width: 100%;
+        }
+
+        .btn:hover {
+            background-color: #2980b9;
+        }
+
+        .btn:disabled {
+            background-color: #bdc3c7;
+            cursor: not-allowed;
+        }
+
+        .loader {
+            display: none;
+            text-align: center;
+            margin: 20px 0;
+        }
+
+        .loader-spinner {
+            border: 4px solid rgba(0, 0, 0, 0.1);
+            border-left: 4px solid #3498db;
+            border-radius: 50%;
+            width: 30px;
+            height: 30px;
+            animation: spin 1s linear infinite;
+            margin: 0 auto;
+        }
+
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+
+        .message {
+            padding: 15px;
+            border-radius: 5px;
+            margin-bottom: 20px;
+            font-weight: 500;
+        }
+
+        .error-message {
+            display: none;
+            background-color: #ffebee;
+            color: #c62828;
+        }
+        
+        .success-message {
+            display: none;
+            background-color: #e8f5e9;
+            color: #2e7d32;
+        }
+
+        .section-title {
+            color: #2c3e50;
+            margin-bottom: 15px;
+            font-size: 1.5rem;
+        }
+
+        .analysis-container {
+            margin-bottom: 25px;
+            padding: 15px;
+            background-color: #f8f9fa;
+            border-radius: 5px;
+            border-left: 4px solid #3498db;
+        }
+
+        .explanations-container {
+            margin-top: 25px;
+        }
+
+        .explanation-item {
+            margin-bottom: 10px;
+            padding-left: 20px;
+            position: relative;
+        }
+
+        .explanation-item:before {
+            content: "•";
+            position: absolute;
+            left: 0;
+            color: #3498db;
+        }
+
+        .code-display {
+            margin: 15px 0;
+            border-radius: 5px;
+            overflow: hidden;
+        }
+
+        .pre-code {
+            margin: 0;
+            padding: 0;
+            overflow-x: auto;
+            font-size: 0.9rem;
+        }
+
+        .copy-btn {
+            background-color: #f1f1f1;
+            border: none;
+            padding: 5px 10px;
+            font-size: 0.8rem;
+            cursor: pointer;
+            margin-top: 5px;
+            border-radius: 3px;
+            float: right;
+        }
+
+        .copy-btn:hover {
+            background-color: #e0e0e0;
+        }
+
+        .code-comparison {
+            display: flex;
+            gap: 20px;
+            flex-direction: column;
+        }
+
+        @media (min-width: 768px) {
+            .code-comparison {
+                flex-direction: row;
+            }
+            
+            .code-panel {
+                flex: 1;
+            }
+        }
+
+        .code-panel {
+            flex: 1;
+        }
+
+        .panel-label {
+            font-weight: 600;
+            margin-bottom: 10px;
+            color: #555;
+        }
+
+        .footer {
+            text-align: center;
+            margin-top: 40px;
+            color: #7f8c8d;
+            font-size: 0.9rem;
+        }
+
+        .tabs {
+            display: flex;
+            margin-bottom: 15px;
+            border-bottom: 1px solid #ddd;
+        }
+
+        .tab {
+            padding: 10px 20px;
+            cursor: pointer;
+            border-bottom: 2px solid transparent;
+        }
+
+        .tab.active {
+            border-bottom: 2px solid #3498db;
+            font-weight: 600;
+        }
+
+        .tab-content {
+            display: none;
+        }
+
+        .tab-content.active {
+            display: block;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <header>
+            <h1>Code Review & Correction</h1>
+            <p class="subtitle">AI-powered code analyzer to find and fix errors in your code</p>
+        </header>
+
+        <div class="card">
+            <label for="codeInput" class="input-label">Paste your code:</label>
+            
+            <select id="languageSelect" class="language-selector">
+                <option value="javascript">JavaScript</option>
+                <option value="python">Python</option>
+                <option value="java">Java</option>
+                <option value="csharp">C#</option>
+                <option value="cpp">C++</option>
+                <option value="php">PHP</option>
+                <option value="ruby">Ruby</option>
+                <option value="typescript">TypeScript</option>
+                <option value="go">Go</option>
+                <option value="swift">Swift</option>
+                <option value="kotlin">Kotlin</option>
+                <option value="rust">Rust</option>
+                <option value="html">HTML</option>
+                <option value="css">CSS</option>
+                <option value="sql">SQL</option>
+            </select>
+            
+            <textarea 
+                id="codeInput" 
+                class="code-input" 
+                placeholder="// Paste your code here to find and fix errors"></textarea>
+            <button id="submitBtn" class="btn">Review & Correct Code</button>
+        </div>
+
+        <div id="errorMessage" class="message error-message"></div>
+        <div id="successMessage" class="message success-message"></div>
+
+        <div id="loader" class="loader">
+            <div class="loader-spinner"></div>
+            <p>Analyzing your code...</p>
+        </div>
+
+        <div id="responseSection" style="display: none;">
+            <div class="card">
+                <h2 class="section-title">Code Analysis Results</h2>
+                
+                <div class="tabs">
+                    <div class="tab active" data-tab="analysis">Analysis</div>
+                    <div class="tab" data-tab="comparison">Code Comparison</div>
+                    <div class="tab" data-tab="explanations">Explanations</div>
+                </div>
+                
+                <div id="analysisTab" class="tab-content active">
+                    <div id="analysisContainer" class="analysis-container"></div>
+                    
+                    <h3 class="panel-label">Corrected Code:</h3>
+                    <div class="code-display">
+                        <button id="copyBtn" class="copy-btn">Copy</button>
+                        <pre class="pre-code"><code id="correctedCode" class="hljs"></code></pre>
+                    </div>
+                </div>
+                
+                <div id="comparisonTab" class="tab-content">
+                    <div class="code-comparison">
+                        <div class="code-panel">
+                            <h3 class="panel-label">Original Code:</h3>
+                            <div class="code-display">
+                                <pre class="pre-code"><code id="originalCode" class="hljs"></code></pre>
+                            </div>
+                        </div>
+                        <div class="code-panel">
+                            <h3 class="panel-label">Corrected Code:</h3>
+                            <div class="code-display">
+                                <button id="copyBtnAlt" class="copy-btn">Copy</button>
+                                <pre class="pre-code"><code id="correctedCodeAlt" class="hljs"></code></pre>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                
+                <div id="explanationsTab" class="tab-content">
+                    <ul id="explanationsList" class="explanations-container">
+                        <!-- Explanations will be inserted here -->
+                    </ul>
+                </div>
+            </div>
+        </div>
+
+        <div class="footer">
+            <p>© 2025 Code Review & Correction Tool</p>
+        </div>
+    </div>
+
+    <script>
+        // DOM Elements
+        const codeInput = document.getElementById('codeInput');
+        const languageSelect = document.getElementById('languageSelect');
+        const submitBtn = document.getElementById('submitBtn');
+        const errorMessage = document.getElementById('errorMessage');
+        const successMessage = document.getElementById('successMessage');
+        const loader = document.getElementById('loader');
+        const responseSection = document.getElementById('responseSection');
+        const analysisContainer = document.getElementById('analysisContainer');
+        const correctedCode = document.getElementById('correctedCode');
+        const correctedCodeAlt = document.getElementById('correctedCodeAlt');
+        const originalCode = document.getElementById('originalCode');
+        const explanationsList = document.getElementById('explanationsList');
+        const copyBtn = document.getElementById('copyBtn');
+        const copyBtnAlt = document.getElementById('copyBtnAlt');
+        const tabs = document.querySelectorAll('.tab');
+        const tabContents = document.querySelectorAll('.tab-content');
+
+        // Server endpoint
+        const API_URL = 'http://localhost:3000/ai/get-review';
+        
+        // Event listeners
+        submitBtn.addEventListener('click', handleSubmit);
+        codeInput.addEventListener('input', validateInput);
+        copyBtn.addEventListener('click', copyCode);
+        copyBtnAlt.addEventListener('click', copyCode);
+        
+        // Tab navigation
+        tabs.forEach(tab => {
+            tab.addEventListener('click', () => {
+                const tabId = tab.getAttribute('data-tab');
+                
+                // Update active tab
+                tabs.forEach(t => t.classList.remove('active'));
+                tab.classList.add('active');
+                
+                // Show active content
+                tabContents.forEach(content => {
+                    content.classList.remove('active');
+                    if (content.id === tabId + 'Tab') {
+                        content.classList.add('active');
+                    }
+                });
+            });
+        });
+
+        // Check server health on page load
+        async function checkServerHealth() {
+            try {
+                const response = await fetch('http://localhost:3000/health');
+                const data = await response.json();
+                console.log('Server health check:', data);
+                
+                if (!data.geminiApiConfigured) {
+                    showError('Server is running but Gemini API key is not configured. Code review functionality will not work properly.', 'error-message');
+                    return false;
+                }
+                
+                showMessage('Server is running! Ready to analyze code.', 'success-message');
+                return true;
+            } catch (error) {
+                console.error('Server health check failed:', error);
+                showError('Server connection failed. Make sure your Express server is running on port 3000.');
+                return false;
+            }
+        }
+        
+        // Check server health on page load
+        checkServerHealth();
+        
+        // Validate input and enable/disable button
+        function validateInput() {
+            if (codeInput.value.trim() === '') {
+                submitBtn.disabled = true;
+            } else {
+                submitBtn.disabled = false;
+                errorMessage.style.display = 'none';
+            }
+        }
+
+        // Initialize validation on page load
+        validateInput();
+
+        // Submit handler
+        async function handleSubmit() {
+            const code = codeInput.value.trim();
+            const language = languageSelect.value;
+            
+            // Validate input again
+            if (!code) {
+                showError('Please enter some code to review');
+                return;
+            }
+            
+            // Show loading state
+            setLoading(true);
+            
+            try {
+                // Check server health first
+                const isServerHealthy = await checkServerHealth();
+                if (!isServerHealthy) {
+                    throw new Error('Server appears to be offline or not responding properly.');
+                }
+                
+                console.log('Sending code for review, language:', language);
+                
+                const response = await fetch(API_URL, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({ 
+                        prompt: code,
+                        language: language
+                    })
+                });
+                
+                if (!response.ok) {
+                    let errorMessage = `Server error: ${response.status}`;
+                    try {
+                        const errorData = await response.json();
+                        errorMessage = errorData.error || errorMessage;
+                    } catch (e) {
+                        errorMessage = `${response.status}: ${response.statusText}`;
+                    }
+                    throw new Error(errorMessage);
+                }
+                
+                const data = await response.json();
+                console.log('Response received:', data);
+                
+                // Display the response
+                displayResponse(data, language);
+                
+            } catch (error) {
+                console.error('Error details:', error);
+                showError(error.message || 'An error occurred while connecting to the server');
+            } finally {
+                setLoading(false);
+            }
+        }
+
+        // Show/hide loading state
+        function setLoading(isLoading) {
+            if (isLoading) {
+                loader.style.display = 'block';
+                submitBtn.disabled = true;
+            } else {
+                loader.style.display = 'none';
+                validateInput();
+            }
+        }
+
+        // Show message
+        function showMessage(message, type) {
+            if (type === 'error-message') {
+                errorMessage.textContent = message;
+                errorMessage.style.display = 'block';
+                successMessage.style.display = 'none';
+            } else if (type === 'success-message') {
+                successMessage.textContent = message;
+                successMessage.style.display = 'block';
+                errorMessage.style.display = 'none';
+            }
+            
+            if (type === 'error-message') {
+                responseSection.style.display = 'none';
+            }
+        }
+
+        // Show error message (alias for clarity)
+        function showError(message) {
+            showMessage(message, 'error-message');
+        }
+
+        // Display the response from the server
+        function displayResponse(data, language) {
+            // Hide error message if any
+            errorMessage.style.display = 'none';
+            
+            // Set analysis
+            analysisContainer.textContent = data.review || "Analysis not available";
+            
+            // Set corrected code in both places
+            correctedCode.textContent = data.correctedCode || "";
+            correctedCodeAlt.textContent = data.correctedCode || "";
+            
+            // Set original code
+            originalCode.textContent = data.prompt || "";
+            
+            // Set language for syntax highlighting
+            correctedCode.className = `language-${language} hljs`;
+            correctedCodeAlt.className = `language-${language} hljs`;
+            originalCode.className = `language-${language} hljs`;
+            
+            // Clear explanations list
+            explanationsList.innerHTML = '';
+            
+            // Add explanations
+            if (data.explanations && Array.isArray(data.explanations)) {
+                data.explanations.forEach(explanation => {
+                    const li = document.createElement('li');
+                    li.className = 'explanation-item';
+                    li.textContent = explanation;
+                    explanationsList.appendChild(li);
+                });
+            } else {
+                const li = document.createElement('li');
+                li.className = 'explanation-item';
+                li.textContent = 'No detailed explanations available';
+                explanationsList.appendChild(li);
+            }
+            
+            // Apply syntax highlighting
+            hljs.highlightAll();
+            
+            // Show the response section
+            responseSection.style.display = 'block';
+            
+            // Reset to first tab
+            tabs[0].click();
+            
+            // Scroll to response
+            responseSection.scrollIntoView({ behavior: 'smooth' });
+        }
+        
+        // Copy code to clipboard
+        function copyCode(e) {
+            const sourceElement = e.target.id === 'copyBtn' ? correctedCode : correctedCodeAlt;
+            const textToCopy = sourceElement.textContent;
+            
+            navigator.clipboard.writeText(textToCopy)
+                .then(() => {
+                    const originalText = e.target.textContent;
+                    e.target.textContent = 'Copied!';
+                    setTimeout(() => {
+                        e.target.textContent = originalText;
+                    }, 2000);
+                })
+                .catch(err => {
+                    console.error('Could not copy text: ', err);
+                    showError('Failed to copy to clipboard');
+                });
+        }
+        
+        // Add example code if textarea is empty
+        if (codeInput.value.trim() === '') {
+            codeInput.value = `// Example JavaScript code with errors
+function calculateSum(arr) {
+  let sum = 0;
+  
+  for (let i = 0; i <= arr.length; i++) {
+    sum += arr[i]
+  }
+  
+  return sum
+}
+
+// Missing semicolons and out-of-bounds loop
+// Try running the review to fix these issues!`;
+        }
+    </script>
+    <script>hljs.highlightAll();</script>
+</body>
+</html>
